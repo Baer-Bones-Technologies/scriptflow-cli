@@ -5,7 +5,7 @@ Flow CLI is a command-line tool for managing and executing custom flows of comma
 You can install Ripple CLI globally using npm:
 
 ```bash
-npm install -g ripple_cli
+npm install -g @ihavepcsd/flow_cli
 ```
 This will make the ripple command available globally in your terminal.
 
