@@ -1,73 +1,71 @@
-# Riverflow CLI
-Riverflow CLI is a command-line tool for managing and executing custom flows of commands in different terminal profiles such as Bash, Zsh, PowerShell, and CMD. It allows you to create, list, run, delete, and edit flows easily.
+# Taskflow CLI: Command Line Workflow Automation Tool
+
+Taskflow CLI is a sophisticated command-line interface (CLI) tool specifically designed for streamlining the management and execution of custom command flows. Compatible with various terminal profiles including Bash, Zsh, PowerShell, and CMD, Taskflow CLI simplifies creating, listing, running, deleting, and editing command sequences with ease.
 
 ## Installation
-You can install Flow CLI globally using npm:
+Install Taskflow CLI globally using npm for easy access across your system:
 
 ```bash
-npm install -g riverflow-cli
+npm install -g taskflow-cli
 ```
-This will make the flow command available globally in your terminal.
+This installation process integrates Taskflow CLI seamlessly into your terminal, making the `flow` command globally accessible.
 
 ## Usage
-Flow CLI provides the following commands:
+Taskflow CLI enhances your command line efficiency with the following commands:
 
-### Initialize Flow CLI
-To initialize Flow CLI and configure your terminal profile and flow directory, run:
+### Initialize Taskflow CLI
+Start by initializing Taskflow CLI to set up your preferred terminal profile and flow directory:
 
 ```bash
 flow init
 ```
-Create a New Flow
 
-###  Create a New Flow
-To create a new flow, use the following command:
+### Create a New Flow
+Easily create a new command flow:
 
 ```bash
 flow create
 ```
-You will be prompted to provide a flow name, flow path, and a list of commands. The script will generate a script file with the appropriate shebang line for your selected terminal profile.
+You'll be guided to define a flow name, path, and command sequence, culminating in a custom script tailored for your terminal environment.
 
 ### List All Flows
-To list all available flows, use the following command:
+View all your created flows with ease:
 
 ```bash
 flow list
 ```
 
-### Run a Flow
-To execute a previously defined flow by name, use the following command:
+### Execute a Flow
+Run any predefined flow swiftly:
 
 ```bash
 flow run <flowName>
 ```
-
-Replace <flowName> with the name of the flow you want to run.
+Replace `<flowName>` with your desired flow's name.
 
 ### Delete a Flow
-To delete a flow by name, use the following command:
+Remove any existing flow:
 
 ```bash
 flow delete <flowName>
 ```
-
-Replace <flowName> with the name of the flow you want to delete.
+Just replace `<flowName> `with the flow you wish to delete.
 
 ### Edit a Flow
-To edit the script file associated with a flow, use the following command:
+Modify any flow with your default text editor:
 
 ```bash
 flow edit <flowName>
 ```
+Change `<flowName>` to the name of the flow you intend to edit.
 
-Replace <flowName> with the name of the flow you want to edit. This command opens the script file in the default text editor for your terminal profile.
+*Current version requires VS Code for the edit command.*
 
 ## Configuration
-The configuration for Flow CLI is stored in a config.json file. You can customize terminal profiles and default settings by modifying this file.
+Customize your Taskflow CLI experience by tweaking the `config.json` file, allowing adjustments in terminal profiles and default settings.
 
 ## Contributing
-If you'd like to contribute to Flow CLI or report issues, please check the GitHub repository for more details.
+Join the Taskflow CLI community! Contributions, bug reports, and feature suggestions are welcome. Visit our GitHub repository for more details.
 
 ## License
-This project is licensed under the MIT License. See the LICENSE file for details.
-
+Taskflow CLI is open-source, licensed under the MIT License. Refer to the LICENSE file for more information.
