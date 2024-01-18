@@ -6,6 +6,7 @@ const path = require('path');
 const util = require('util');
 const childProcess = require('child_process');
 const yargs = require('yargs/yargs');
+const os = require("os")
 
 const { hideBin } = require('yargs/helpers');
 
@@ -42,7 +43,7 @@ const initialize = async () => {
         type: 'list',
         name: 'terminalProfile',
         message: 'Select your terminal profile:',
-        choices: ['bash', 'zsh'],
+        choices: ['bash', 'zsh', 'powershell', 'cmd'],
         default: 'bash',
     });
 
@@ -50,12 +51,12 @@ const initialize = async () => {
         type: 'input',
         name: 'flowLocation',
         message: 'Enter the path where flows will be stored:',
-        default: config.flowDir,
+        default: config.flowDir.replace("$USER_HOME", os.homeDir()),
     });
 
     config.terminalProfile = terminalProfileAnswer.terminalProfile;
     config.flowDir = flowLocationAnswer.flowLocation;
-    config.flowCommandDir = config.flowDir + '/commands'
+    config.flowCommandDir = path.join(config.flowDir, 'commands')
     config.initialized = true;
 
     await saveConfig(config);
