@@ -2,18 +2,18 @@
 Flow CLI is a command-line tool for managing and executing custom flows of commands in different terminal profiles such as Bash, Zsh, PowerShell, and CMD. It allows you to create, list, run, delete, and edit flows easily.
 
 ## Installation
-You can install Ripple CLI globally using npm:
+You can install Flow CLI globally using npm:
 
 ```bash
 npm install -g @ihavepcsd/flow_cli
 ```
-This will make the ripple command available globally in your terminal.
+This will make the flow command available globally in your terminal.
 
 ## Usage
-Ripple CLI provides the following commands:
+Flow CLI provides the following commands:
 
-### Initialize Ripple CLI
-To initialize Ripple CLI and configure your terminal profile and flow directory, run:
+### Initialize Flow CLI
+To initialize Flow CLI and configure your terminal profile and flow directory, run:
 
 ```bash
 flow init
@@ -57,16 +57,16 @@ Replace <flowName> with the name of the flow you want to delete.
 To edit the script file associated with a flow, use the following command:
 
 ```bash
-ripple edit <flowName>
+flow edit <flowName>
 ```
 
 Replace <flowName> with the name of the flow you want to edit. This command opens the script file in the default text editor for your terminal profile.
 
 ## Configuration
-The configuration for Ripple CLI is stored in a config.json file. You can customize terminal profiles and default settings by modifying this file.
+The configuration for Flow CLI is stored in a config.json file. You can customize terminal profiles and default settings by modifying this file.
 
 ## Contributing
-If you'd like to contribute to Ripple CLI or report issues, please check the GitHub repository for more details.
+If you'd like to contribute to Flow CLI or report issues, please check the GitHub repository for more details.
 
 ## License
 This project is licensed under the MIT License. See the LICENSE file for details.

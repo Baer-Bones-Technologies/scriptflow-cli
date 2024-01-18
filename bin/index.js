@@ -55,6 +55,7 @@ const initialize = async () => {
 
     config.terminalProfile = terminalProfileAnswer.terminalProfile;
     config.flowDir = flowLocationAnswer.flowLocation;
+    config.flowCommandDir = config.flowDir + '/commands'
     config.initialized = true;
 
     await saveConfig(config);
@@ -128,7 +129,7 @@ const createFlow = async () => {
     }
 
     
-    const commandFolder = path.join(config.flowDir, flowName);
+    const commandFolder = path.join(config.flowCommandDir, flowName);
    
     try {
         await fs.mkdir(commandFolder, { recursive: true });
