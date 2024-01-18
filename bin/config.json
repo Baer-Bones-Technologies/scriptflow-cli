@@ -1,8 +1,8 @@
 {
-  "flowDir": "/Users/jamarcuswilliams/.flows",
-  "flowCommandDir": "/Users/jamarcuswilliams/.flows/commands",
+  "flowDir": "$USER_HOME/.flows",
+  "flowCommandDir": "$USER_HOME/.flows/commands",
   "flowFileName": "flows.json",
   "defaultFlowPath": ".",
-  "terminalProfile": "zsh",
-  "initialized": false
+  "terminalProfile": "powershell",
+  "initialized": true
 }
