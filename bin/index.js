@@ -9,10 +9,13 @@ const yargs = require('yargs/yargs');
 const os = require('os');
 
 const { hideBin } = require('yargs/helpers');
+const { initial } = require('lodash');
 
 const configFile = path.join(__dirname, 'config.json');
 
 const loadConfig = async () => {
+    await checkForUpdates();
+
     try {
         const configData = await fs.readFile(configFile, 'utf-8');
         return JSON.parse(configData);
@@ -22,6 +25,8 @@ const loadConfig = async () => {
 };
 
 const saveConfig = async (config) => {
+    await checkForUpdates();
+
     try {
         await fs.writeFile(configFile, JSON.stringify(config, null, 2));
     } catch (error) {
@@ -32,6 +37,8 @@ const saveConfig = async (config) => {
 const executeCommand = util.promisify(childProcess.exec);
 
 const initialize = async () => {
+    await checkForUpdates();
+
     const config = await loadConfig();
 
     if (config.initialized) {
@@ -64,6 +71,8 @@ const initialize = async () => {
 };
 
 const createFlow = async () => {
+    await checkForUpdates();
+
     const config = await loadConfig();
 
     if (!config.initialized) {
@@ -76,7 +85,24 @@ const createFlow = async () => {
             type: 'input',
             name: 'flowName',
             message: 'Enter flow name:',
-            validate: (value) => /^[a-zA-Z0-9-_]+$/.test(value) || 'Please enter a valid flow name',
+            validate: (value) => {
+                try {
+                    if (!/^[a-zA-Z0-9-_]+$/.test(value)) {
+                        return 'Please enter a valid flow name';
+                    }
+                    //check if flow name already exists
+                    const flows = loadFlows();
+                    const flow = flows.find((f) => f.name === value);
+                    if (flow) {
+                        return 'Flow name already exists';
+                    }
+                    return true;
+                }
+                catch (error) {
+                    return 'Please enter a valid flow name';
+                }
+
+            }
         },
         {
             type: 'input',
@@ -129,9 +155,9 @@ const createFlow = async () => {
             return;
     }
 
-    
+
     const commandFolder = path.join(config.flowCommandDir, flowName);
-   
+
     try {
         await fs.mkdir(commandFolder, { recursive: true });
         const scriptFile = path.join(commandFolder, `script${scriptFileExtension}`);
@@ -153,6 +179,8 @@ const createFlow = async () => {
 };
 
 const listFlows = async () => {
+    await checkForUpdates();
+
     const config = await loadConfig();
 
     if (!config.initialized) {
@@ -172,6 +200,8 @@ const listFlows = async () => {
 };
 
 const runFlow = async (flowName) => {
+    await checkForUpdates();
+
     const config = await loadConfig();
 
     if (!config.initialized) {
@@ -207,6 +237,8 @@ const runFlow = async (flowName) => {
 };
 
 const deleteFlow = async (flowName) => {
+    await checkForUpdates();
+
     const config = await loadConfig();
 
     if (!config.initialized) {
@@ -236,6 +268,8 @@ const deleteFlow = async (flowName) => {
 };
 
 const loadFlows = async () => {
+    await checkForUpdates();
+
     try {
         const config = await loadConfig();
         const flowsFile = path.join(config.flowDir, 'flows.json');
@@ -263,12 +297,145 @@ const saveFlows = async (flows) => {
     }
 };
 
+const reinitialize = async () => {
+    await checkForUpdates();
+
+    // give user option to move flows to new location, or delete them, or cancel
+    // if move, ask for new location
+    // if delete, delete flows and ask for new location
+    // if cancel, cancel
+
+    const COMPLETED_MOVE = "Flows moved successfully!\n\nNew location:"
+    const config = await loadConfig();
+
+    //check if existing flows exist
+    const flows = await loadFlows();
+    if (flows.length > 0) {
+        const verificationAnswer = await inquirer.prompt({
+            type: 'list',
+            name: 'verification',
+            message: 'You are about to reinitialize the flow manager. What would you like to do with existing flows?',
+            choices: ['Move To New Location', 'Delete Existing Flows', 'Cancel'],
+            default: 'Move To New Location',
+        });
+
+        switch (verificationAnswer.verification) {
+            case 'Move To New Location':
+                const newFlowLocationAnswer = await inquirer.prompt({
+                    type: 'input',
+                    name: 'flowLocation',
+                    message: 'Enter the path where flows will be stored:',
+                    default: config.flowDir.replace("$USER_HOME", os.homedir()),
+                });
+                //move flow folder to new location recursively
+                const execSync = require('child_process').execSync;
+                switch (config.terminalProfile) {
+                    case 'bash':
+                    case 'zsh':
+                        execSync(`mv ${config.flowDir} ${newFlowLocationAnswer.flowLocation}; echo ${COMPLETED_MOVE}${newFlowLocationAnswer.flowLocation}`);
+                        break;
+                    case 'powershell':
+                        execSync(`Move-Item -Path ${config.flowDir} -Destination ${newFlowLocationAnswer.flowLocation}; echo ${COMPLETED_MOVE}${newFlowLocationAnswer.flowLocation}`);
+                        break;
+                    case 'cmd':
+                        execSync(`move ${config.flowDir} ${newFlowLocationAnswer.flowLocation}; echo ${COMPLETED_MOVE}${newFlowLocationAnswer.flowLocation}`);
+                        break;
+                    default:
+                        console.log('Invalid terminal profile selected.');
+                }
+                //update config
+                config.flowDir = newFlowLocationAnswer.flowLocation;
+                config.flowCommandDir = path.join(config.flowDir, 'commands')
+                config.initialized = true;
+                await saveConfig(config);
+                break;
+            case 'Delete Existing Flows':
+                //delete flows folder
+                const exec = require('child_process').exec;
+
+                switch (config.terminalProfile) {
+                    case 'bash':
+                    case 'zsh':
+                        exec(`rm -rf ${config.flowDir}`);
+                        break;
+                    case 'powershell':
+                        exec(`Remove-Item -Recurse -Force ${config.flowDir}`);
+                        break;
+                    case 'cmd':
+                        exec(`rmdir /s /q ${config.flowDir}`);
+                        break;
+                    default:
+                        console.log('Invalid terminal profile selected.');
+                        return;
+                }
+
+                //update config
+                config.initialized = false;
+                await saveConfig(config);
+
+                //reinitialize
+                await initialize();
+                break;
+            case 'Cancel':
+                return;
+        }
+    }
+}
+
+const openFlowForEditing = async (flowName) => {
+    await checkForUpdates();
+    const config = await loadConfig();
+
+    if (!config.initialized) {
+        console.log('Flow manager is not initialized. Please run "flow init" to initialize it.');
+        return;
+    }
+
+    const flows = await loadFlows();
+    const flow = flows.find((f) => f.name === flowName);
+
+    if (!flow) {
+        console.log('Flow not found');
+        return;
+    }
+
+    const currentDir = process.cwd();
+    process.chdir(flow.path);
+
+    console.log('Opening flow for editing: ' + flow.name);
+
+    try {
+        const { stdout, stderr } = await executeCommand(`code ${flow.script}`);
+        console.log(stdout);
+        if (stderr) {
+            console.error(stderr);
+        }
+    } catch (error) {
+        console.error('Error opening flow for editing:', error.message);
+    } finally {
+        process.chdir(currentDir);
+        console.log('Finished.');
+    }
+}
+
+
+const checkForUpdates = async () => {
+    const { stdout, stderr } = await executeCommand('npm view riverflow-cli version');
+    const latestVersion = stdout.trim();
+
+    if (latestVersion !== require('../package.json').version) {
+        console.log('A new version of riverflow-cli is available. Run "npm i -g riverflow-cli" to update.');
+    }
+}
+
 yargs(hideBin(process.argv))
     .command('init', 'Initialize the flow manager', {}, initialize)
     .command('create', 'Create a new flow', {}, createFlow)
     .command('list', 'List all flows', {}, listFlows)
     .command('run <flowName>', 'Run a flow by name', {}, (argv) => runFlow(argv.flowName))
     .command('delete <flowName>', 'Delete a flow by name', {}, (argv) => deleteFlow(argv.flowName))
+    .command('reinit', 'Reinitialize the flow manager', {}, reinitialize)
+    .command('edit <flowName>', 'Open a flow for editing', {}, (argv) => openFlowForEditing(argv.flowName))
     .demandCommand()
     .help()
     .argv;
