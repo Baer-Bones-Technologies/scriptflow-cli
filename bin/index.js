@@ -107,21 +107,21 @@ const createFlow = async () => {
 
     switch (config.terminalProfile) {
         case 'bash':
-            scriptContent = `#!/bin/bash\n\n${commands.replace(',', '\n\n')}`;
+            scriptContent = `#!/bin/bash\n\n${commands.replaceAll(',', '\n\n')}`;
             scriptFileExtension = '.sh';
             break;
         case 'zsh':
-            scriptContent = `#!/bin/zsh\n\n${commands.replace(',', '\n\n')}`;
+            scriptContent = `#!/bin/zsh\n\n${commands.replaceAll(',', '\n\n')}`;
             scriptFileExtension = '.sh';
             break;
         case 'powershell':
             // PowerShell script content
-            scriptContent = `# PowerShell script content here\n\n${commands.replace(',', '\n')}`;
+            scriptContent = `# PowerShell script content here\n\n${commands.replaceAll(',', '\n')}`;
             scriptFileExtension = '.ps1';
             break;
         case 'cmd':
             // CMD (batch script) content
-            scriptContent = `@echo off\n\n${commands.replace(',', '\n')}`;
+            scriptContent = `@echo off\n\n${commands.replaceAll(',', '\n')}`;
             scriptFileExtension = '.bat';
             break;
         default:
