@@ -1,11 +1,11 @@
-# Flow CLI
-Flow CLI is a command-line tool for managing and executing custom flows of commands in different terminal profiles such as Bash, Zsh, PowerShell, and CMD. It allows you to create, list, run, delete, and edit flows easily.
+# Riverflow CLI
+Riverflow CLI is a command-line tool for managing and executing custom flows of commands in different terminal profiles such as Bash, Zsh, PowerShell, and CMD. It allows you to create, list, run, delete, and edit flows easily.
 
 ## Installation
 You can install Flow CLI globally using npm:
 
 ```bash
-npm install -g @ihavepcsd/flow_cli
+npm install -g riverflow-cli
 ```
 This will make the flow command available globally in your terminal.
 
