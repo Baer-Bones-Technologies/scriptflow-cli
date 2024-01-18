@@ -1,6 +1,6 @@
 {
   "name": "riverflow-cli",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Workflow CLI created to streamline any taska that are done on a regular basis through the terminal",
   "main": "index.js",
   "bin": {
