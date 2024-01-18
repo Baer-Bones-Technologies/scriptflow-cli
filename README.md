@@ -61,6 +61,15 @@ Change `<flowName>` to the name of the flow you intend to edit.
 
 *Current version requires VS Code for the edit command.*
 
+### Set to Default
+Set scriptflow to default settings, with the option to delete flows:
+
+```bash
+flow default
+```
+After resetting you will need to re initialize Scriptflow with ```flow init```
+
+
 ## Configuration
 Customize your Scriptflow CLI experience by tweaking the `config.json` file, allowing adjustments in terminal profiles and default settings.
 

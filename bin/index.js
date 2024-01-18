@@ -70,7 +70,7 @@ const initialize = async () => {
     console.log('Flow manager initialized successfully!');
 };
 
-const createFlow = async () => {
+const createFlow = async (flowNameEntry = null) => {
     await checkForUpdates();
 
     const config = await loadConfig();
@@ -80,7 +80,32 @@ const createFlow = async () => {
         return;
     }
 
+    if(!flowNameEntry){
+        const flowNameEntry= await inquirer.prompt({
+        type: 'input',
+        name: 'flowName',
+        message: 'Enter flow name:',
+        validate: (value) => {
+            try {
+                if (!/^[a-zA-Z0-9-_]+$/.test(value)) {
+                    return 'Please enter a valid flow name';
+                }
+                //check if flow name already exists
+                const flows = loadFlows();
+                const flow = flows.find((f) => f.name === value);
+                if (flow) {
+                    return 'Flow name already exists';
+                }
+                return true;
+            }
+            catch (error) {
+                return 'Please enter a valid flow name';
+            }
+        },
+    });
+    }
     const questions = [
+        flowNameEntry,
         {
             type: 'input',
             name: 'flowName',
@@ -101,8 +126,7 @@ const createFlow = async () => {
                 catch (error) {
                     return 'Please enter a valid flow name';
                 }
-
-            }
+            },
         },
         {
             type: 'input',
@@ -418,14 +442,23 @@ const openFlowForEditing = async (flowName) => {
     }
 }
 
-
 const checkForUpdates = async () => {
-    const { stdout, stderr } = await executeCommand('npm view riverflow-cli version');
+    const { stdout, stderr } = await executeCommand('npm view scriptflow-cli version');
     const latestVersion = stdout.trim();
 
     if (latestVersion !== require('../package.json').version) {
-        console.log('A new version of riverflow-cli is available. Run "npm i -g riverflow-cli" to update.');
+        console.log('A new version of scriptflow-cli is available. Run "npm i -g scriptflow-cli" to update.');
     }
+}
+
+const resetConfig = async () => {
+    const config = await loadConfig();
+    config.flowDir = path.join(os.homedir(), '.flow');
+    config.flowCommandDir = path.join(config.flowDir, 'commands')
+    config.terminalProfile = 'bash';
+    config.defaultFlowPath = '.';
+    config.initialized = false;
+    await saveConfig(config);
 }
 
 yargs(hideBin(process.argv))
@@ -436,6 +469,7 @@ yargs(hideBin(process.argv))
     .command('delete <flowName>', 'Delete a flow by name', {}, (argv) => deleteFlow(argv.flowName))
     .command('reinit', 'Reinitialize the flow manager', {}, reinitialize)
     .command('edit <flowName>', 'Open a flow for editing', {}, (argv) => openFlowForEditing(argv.flowName))
+    .command('default', 'Reset the flow manager config', {}, resetConfig)
     .demandCommand()
     .help()
     .argv;
