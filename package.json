@@ -4,7 +4,7 @@
   "description": "Workflow CLI created to streamline any taska that are done on a regular basis through the terminal",
   "main": "index.js",
   "bin": {
-    "flow-cli": "bin/index.js"
+    "flow": "bin/index.js"
   },
   "dependencies": {
     "ansi-escapes": "^4.3.2",
@@ -56,14 +56,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Baer-Bones-Technology/flow-cli.git"
+    "url": "git+https://github.com/Baer-Bones-Technology/riverflow-cli.git"
   },
   "author": "Baer Hous",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Baer-Bones-Technology/flow-cli/issues"
+    "url": "https://github.com/Baer-Bones-Technology/riverflow-cli/issues"
   },
-  "homepage": "https://github.com/Baer-Bones-Technology/flow-cli#readme",
+  "homepage": "https://github.com/Baer-Bones-Technology/riverflow-cli#readme",
   "keywords": [
     "workflow",
     "scripts",
