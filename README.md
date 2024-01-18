@@ -1,5 +1,5 @@
-# Ripple CLI
-Ripple CLI is a command-line tool for managing and executing custom flows of commands in different terminal profiles such as Bash, Zsh, PowerShell, and CMD. It allows you to create, list, run, delete, and edit flows easily.
+# Flow CLI
+Flow CLI is a command-line tool for managing and executing custom flows of commands in different terminal profiles such as Bash, Zsh, PowerShell, and CMD. It allows you to create, list, run, delete, and edit flows easily.
 
 ## Installation
 You can install Ripple CLI globally using npm:
