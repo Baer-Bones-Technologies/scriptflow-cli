@@ -4,5 +4,5 @@
   "flowFileName": "flows.json",
   "defaultFlowPath": ".",
   "terminalProfile": "zsh",
-  "initialized": true
+  "initialized": false
 }

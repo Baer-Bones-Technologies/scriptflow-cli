@@ -9,6 +9,7 @@ const yargs = require('yargs/yargs');
 const os = require('os');
 
 const { hideBin } = require('yargs/helpers');
+const { initial } = require('lodash');
 
 const configFile = path.join(__dirname, 'config.json');
 
@@ -263,12 +264,131 @@ const saveFlows = async (flows) => {
     }
 };
 
+const reinitialize = async () => {
+    // give user option to move flows to new location, or delete them, or cancel
+    // if move, ask for new location
+    // if delete, delete flows and ask for new location
+    // if cancel, cancel
+
+    const COMPLETED_MOVE = "Flows moved successfully!\n\nNew location:"
+    const config = await loadConfig();
+
+    //check if existing flows exist
+    const flows = await loadFlows();
+    if (flows.length > 0) {
+        const verificationAnswer = await inquirer.prompt({
+            type: 'list',
+            name: 'verification',
+            message: 'You are about to reinitialize the flow manager. What would you like to do with existing flows?',
+            choices: ['Move To New Location', 'Delete Existing Flows', 'Cancel'],
+            default: 'Move To New Location',
+        });
+
+        if (verificationAnswer.verification === 'Cancel') {
+            return;
+        }
+
+        if (verificationAnswer.verification === 'Move To New Location') {
+            const newFlowLocationAnswer = await inquirer.prompt({
+                type: 'input',
+                name: 'flowLocation',
+                message: 'Enter the path where flows will be stored:',
+                default: config.flowDir.replace("$USER_HOME", os.homedir()),
+            });
+            //move flow folder to new location recursively
+            const execSync = require('child_process').execSync;
+            switch(config.terminalProfile) {
+                case 'bash':
+                case 'zsh': 
+                execSync(`mv ${config.flowDir} ${newFlowLocationAnswer.flowLocation}; echo ${COMPLETED_MOVE}${newFlowLocationAnswer.flowLocation}`);
+                break;
+                case 'powershell':
+                execSync(`Move-Item -Path ${config.flowDir} -Destination ${newFlowLocationAnswer.flowLocation}; echo ${COMPLETED_MOVE}${newFlowLocationAnswer.flowLocation}`);
+                break;
+                case 'cmd':
+                execSync(`move ${config.flowDir} ${newFlowLocationAnswer.flowLocation}; echo ${COMPLETED_MOVE}${newFlowLocationAnswer.flowLocation}`);
+                break;
+                default:
+                console.log('Invalid terminal profile selected.');
+            }
+            //update config
+            config.flowDir = newFlowLocationAnswer.flowLocation;
+            config.flowCommandDir = path.join(config.flowDir, 'commands')
+            config.initialized = true;
+            await saveConfig(config);
+        }
+    } else {
+        //delete flows folder
+        const execSync = require('child_process').execSync;
+
+        switch (config.terminalProfile) {
+            case 'bash':
+            case 'zsh':
+                execSync(`rm -rf ${config.flowDir}`);
+                break;
+            case 'powershell':
+                execSync(`Remove-Item -Recurse -Force ${config.flowDir}`);
+                break;
+            case 'cmd':
+                execSync(`rmdir /s /q ${config.flowDir}`);
+                break;
+            default:
+                console.log('Invalid terminal profile selected.');
+                return;
+        }
+
+        //update config
+        config.initialized = false;
+        await saveConfig(config);
+
+        //reinitialize
+        initialize();
+    }
+}
+
+const openFlowForEditing = async (flowName) => {
+    const config = await loadConfig();
+
+    if (!config.initialized) {
+        console.log('Flow manager is not initialized. Please run "flow init" to initialize it.');
+        return;
+    }
+
+    const flows = await loadFlows();
+    const flow = flows.find((f) => f.name === flowName);
+
+    if (!flow) {
+        console.log('Flow not found');
+        return;
+    }
+
+    const currentDir = process.cwd();
+    process.chdir(flow.path);
+
+    console.log('Opening flow for editing: ' + flow.name);
+
+    try {
+        const { stdout, stderr } = await executeCommand(`code ${flow.script}`);
+        console.log(stdout);
+        if (stderr) {
+            console.error(stderr);
+        }
+    } catch (error) {
+        console.error('Error opening flow for editing:', error.message);
+    } finally {
+        process.chdir(currentDir);
+        console.log('Finished.');
+    }
+}
+
 yargs(hideBin(process.argv))
     .command('init', 'Initialize the flow manager', {}, initialize)
     .command('create', 'Create a new flow', {}, createFlow)
     .command('list', 'List all flows', {}, listFlows)
     .command('run <flowName>', 'Run a flow by name', {}, (argv) => runFlow(argv.flowName))
     .command('delete <flowName>', 'Delete a flow by name', {}, (argv) => deleteFlow(argv.flowName))
+    .command('reinit', 'Reinitialize the flow manager', {}, reinitialize)
+    .command('edit <flowName>', 'Open a flow for editing', {}, (argv) => openFlowForEditing(argv.flowName))
     .demandCommand()
     .help()
     .argv;
