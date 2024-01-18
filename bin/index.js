@@ -6,7 +6,7 @@ const path = require('path');
 const util = require('util');
 const childProcess = require('child_process');
 const yargs = require('yargs/yargs');
-const os = require("os")
+const os = require('os');
 
 const { hideBin } = require('yargs/helpers');
 
@@ -51,7 +51,7 @@ const initialize = async () => {
         type: 'input',
         name: 'flowLocation',
         message: 'Enter the path where flows will be stored:',
-        default: config.flowDir.replace("$USER_HOME", os.homeDir()),
+        default: config.flowDir.replace("$USER_HOME", os.homedir()),
     });
 
     config.terminalProfile = terminalProfileAnswer.terminalProfile;
