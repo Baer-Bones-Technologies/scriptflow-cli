@@ -70,7 +70,10 @@ const initialize = async () => {
     console.log('Flow manager initialized successfully!');
 };
 
-const createFlow = async (flowNameEntry = null) => {
+
+/**@param {String} flowNameEntry for naming flow */
+
+const createFlow = async () => {
     await checkForUpdates();
 
     const config = await loadConfig();
@@ -80,51 +83,27 @@ const createFlow = async (flowNameEntry = null) => {
         return;
     }
 
-    if(!flowNameEntry){
-        const flowNameEntry= await inquirer.prompt({
-        type: 'input',
-        name: 'flowName',
-        message: 'Enter flow name:',
-        validate: (value) => {
-            try {
-                if (!/^[a-zA-Z0-9-_]+$/.test(value)) {
-                    return 'Please enter a valid flow name';
-                }
-                //check if flow name already exists
-                const flows = loadFlows();
-                const flow = flows.find((f) => f.name === value);
-                if (flow) {
-                    return 'Flow name already exists';
-                }
-                return true;
-            }
-            catch (error) {
-                return 'Please enter a valid flow name';
-            }
-        },
-    });
-    }
     const questions = [
-        flowNameEntry,
-        {
+   {
             type: 'input',
             name: 'flowName',
             message: 'Enter flow name:',
-            validate: (value) => {
+            validate: async (value) => {
                 try {
-                    if (!/^[a-zA-Z0-9-_]+$/.test(value)) {
+                    // check if flow name is valid (only alphanumeric, underscore, and dash allowed)
+                    if (/^([a-zA-Z0-9_-]*)$/.test(value) !== true) {
                         return 'Please enter a valid flow name';
                     }
                     //check if flow name already exists
-                    const flows = loadFlows();
-                    const flow = flows.find((f) => f.name === value);
+                    const flows = await loadFlows();
+                    const flow = flows !== null ? flows.find((f) => f.name === value) : null;
                     if (flow) {
                         return 'Flow name already exists';
                     }
                     return true;
                 }
                 catch (error) {
-                    return 'Please enter a valid flow name';
+                    return 'An Error Occurred: ' + error.message;
                 }
             },
         },
@@ -246,8 +225,25 @@ const runFlow = async (flowName) => {
 
     console.log('Running flow: ' + flow.name);
 
+    var shellRunner;
+    switch (config.terminalProfile) {
+        case 'bash':
+        case 'zsh':
+            shellRunner = 'sh';
+            break;
+        case 'powershell':
+            shellRunner = '';
+            break;
+        case 'cmd':
+            shellRunner = 'cmd';
+            break;
+        default:
+            console.log('Invalid terminal profile selected.');
+            return;
+    }
+
     try {
-        const { stdout, stderr } = await executeCommand(`sh ${flow.script}`);
+        const { stdout, stderr } = await executeCommand(`${shellRunner} ${flow.script}`);
         console.log(stdout);
         if (stderr) {
             console.error(stderr);
@@ -461,6 +457,11 @@ const resetConfig = async () => {
     await saveConfig(config);
 }
 
+const viewConfig = async () => {
+    const config = await loadConfig();
+    console.log(config);
+}
+
 yargs(hideBin(process.argv))
     .command('init', 'Initialize the flow manager', {}, initialize)
     .command('create', 'Create a new flow', {}, createFlow)
@@ -470,6 +471,7 @@ yargs(hideBin(process.argv))
     .command('reinit', 'Reinitialize the flow manager', {}, reinitialize)
     .command('edit <flowName>', 'Open a flow for editing', {}, (argv) => openFlowForEditing(argv.flowName))
     .command('default', 'Reset the flow manager config', {}, resetConfig)
+    .command('config', 'View the flow manager config', {}, viewConfig)
     .demandCommand()
     .help()
     .argv;
