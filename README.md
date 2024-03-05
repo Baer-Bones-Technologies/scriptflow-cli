@@ -1,5 +1,9 @@
 # Scriptflow CLI: Command Line Workflow Automation Tool
 
+## Updated Versions Need to Know
+- 0.1.0
+    In previous versions I noticed a bug where flows would be ran with no output displayed to the terminal. This has been fixed in this version. However, if you are using a flow that was created in a previous version, you will need to run `flow update`, or manually update the flow by using `flow edit` and adding `| tee -a /dev/tty | grep -q "Error" && exit 1 || exit 0` command at the end of the flows lines if it hasn't been updated after running `flow update`. This will allow the output to be displayed in the terminal.
+
 Scriptflow CLI is a sophisticated command-line interface (CLI) tool specifically designed for streamlining the management and execution of custom command flows. Compatible with various terminal profiles including Bash, Zsh, PowerShell, and CMD, Scriptflow CLI simplifies creating, listing, running, deleting, and editing command sequences with ease.
 
 ## Installation
@@ -68,6 +72,26 @@ Set scriptflow to default settings, with the option to delete flows:
 flow default
 ```
 After resetting you will need to re initialize Scriptflow with ```flow init```
+
+### Update Scriptflow CLI
+Keep your Scriptflow CLI up to date with the latest version:
+
+```bash
+flow update
+```
+or traditionally using the npm command:
+
+```bash
+npm update -g scriptflow-cli
+```
+
+### Help
+Access the help menu for a list of all available commands:
+
+```bash
+flow help
+```
+
 
 
 ## Configuration

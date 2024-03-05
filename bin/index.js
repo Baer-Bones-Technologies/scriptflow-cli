@@ -71,9 +71,58 @@ const initialize = async () => {
 };
 
 
+const createFlow = async (flowName, flowPath, commands) => {
+    let scriptContent = '';
+    let scriptFileExtension = '';
+    const config = await loadConfig();
+
+    switch (config.terminalProfile) {
+        case 'bash':
+            scriptContent = `#!/bin/bash\n\n${commands.replaceAll(',', '| tee -a /dev/tty | grep -q "Error" && exit 1 || exit 0\n\n')}`;
+            scriptFileExtension = '.sh';
+            break;
+        case 'zsh':
+            scriptContent = `#!/bin/zsh\n\n${commands.replaceAll(',',  '| tee -a /dev/tty | grep -q "Error" && exit 1 || exit 0\n\n')}`;
+            scriptFileExtension = '.sh';
+            break;
+        case 'powershell':
+            // PowerShell script content
+            scriptContent = `# PowerShell script content here\n\n${commands.replaceAll(',', '| tee -a /dev/tty | grep -q "Error" && exit 1 || exit 0\n')}`;
+            scriptFileExtension = '.ps1';
+            break;
+        case 'cmd':
+            // CMD (batch script) content
+            scriptContent = `@echo off\n\n${commands.replaceAll(',', '| tee -a /dev/tty | grep -q "Error" && exit 1 || exit 0\n')}`;
+            scriptFileExtension = '.bat';
+            break;
+        default:
+            console.log('Invalid terminal profile selected.');
+            return;
+    }
+    const commandFolder = path.join(config.flowCommandDir, flowName);
+
+    try {
+        await fs.mkdir(commandFolder, { recursive: true });
+        const scriptFile = path.join(commandFolder, `script${scriptFileExtension}`);
+        await fs.writeFile(scriptFile, scriptContent);
+
+        const flows = await loadFlows();
+        flows.push({
+            name: flowName,
+            path: flowPath,
+            script: scriptFile,
+        });
+
+        await saveFlows(flows);
+
+        console.log(`Flow created successfully! File location: ${scriptFile}`);
+    } catch (error) {
+        console.error('Error creating flow:', error.message);
+    }
+}
 /**@param {String} flowNameEntry for naming flow */
 
-const createFlow = async () => {
+const createFlowWithPrompt = async () => {
     await checkForUpdates();
 
     const config = await loadConfig();
@@ -125,60 +174,26 @@ const createFlow = async () => {
             type: 'input',
             name: 'commands',
             message: 'Enter the commands to run (comma separated):',
+            validate: async (value) => {
+                try {
+                    if (value === '') {
+                        return 'Please enter at least one command';
+                    }
+                    // if command doesn't end with comma, add it
+                    if (!value.endsWith(',')) {
+                        value += ',';
+                    }
+                    return true;
+                } catch (error) {
+                    return 'An Error Occurred: ' + error.message;
+                }
+            }
         },
     ];
 
     const answers = await inquirer.prompt(questions);
     const { flowName, flowPath, commands } = answers;
-
-    let scriptContent = '';
-    let scriptFileExtension = '';
-
-    switch (config.terminalProfile) {
-        case 'bash':
-            scriptContent = `#!/bin/bash\n\n${commands.replaceAll(',', '\n\n')}`;
-            scriptFileExtension = '.sh';
-            break;
-        case 'zsh':
-            scriptContent = `#!/bin/zsh\n\n${commands.replaceAll(',', '\n\n')}`;
-            scriptFileExtension = '.sh';
-            break;
-        case 'powershell':
-            // PowerShell script content
-            scriptContent = `# PowerShell script content here\n\n${commands.replaceAll(',', '\n')}`;
-            scriptFileExtension = '.ps1';
-            break;
-        case 'cmd':
-            // CMD (batch script) content
-            scriptContent = `@echo off\n\n${commands.replaceAll(',', '\n')}`;
-            scriptFileExtension = '.bat';
-            break;
-        default:
-            console.log('Invalid terminal profile selected.');
-            return;
-    }
-
-
-    const commandFolder = path.join(config.flowCommandDir, flowName);
-
-    try {
-        await fs.mkdir(commandFolder, { recursive: true });
-        const scriptFile = path.join(commandFolder, `script${scriptFileExtension}`);
-        await fs.writeFile(scriptFile, scriptContent);
-
-        const flows = await loadFlows();
-        flows.push({
-            name: flowName,
-            path: flowPath,
-            script: scriptFile,
-        });
-
-        await saveFlows(flows);
-
-        console.log(`Flow created successfully! File location: ${scriptFile}`);
-    } catch (error) {
-        console.error('Error creating flow:', error.message);
-    }
+    createFlow(flowName, flowPath, commands);
 };
 
 const listFlows = async () => {
@@ -462,9 +477,44 @@ const viewConfig = async () => {
     console.log(config);
 }
 
+//update via npm
+const update = async () => {
+    //get current config
+    const config = await loadConfig();
+
+    //update scriptflow-cli
+    const { stdout, stderr } = await executeCommand('npm i -g . | grep -q "Error" && exit 1 || exit 0');
+    console.log(stdout);
+    if (stderr) {
+        console.error(stderr);
+    }
+
+    // get flows and update them
+    const flows = await loadFlows();
+    for (const flow of flows) {
+        const scriptFile = flow.script;
+        const scriptContent = await fs.readFile(scriptFile, 'utf-8');
+        // Update from v0.0.3 to v0.0.4
+        //replace shebang with blank
+        scriptContent = scriptContent.replace('\#.*\n\n', '');
+        if(!scriptContent.includes('| tee -a /dev/tty | grep -q "Error" && exit 1 || exit 0\n\n')){
+        // replace '\n\n' with ','
+        scriptContent = scriptContent.replaceAll('\n\n', ',');
+        } else {
+             continue;
+        }
+        createFlow(flow.name, flow.path, scriptContent);
+    }
+
+    saveConfig(config);
+    // log success and any breaking changes needed to be made.
+    console.log('Flow manager updated successfully!');
+    console.log('Please check for any breaking changes in the latest version and update your flows accordingly.:\nhttps://github.com/ScriptFlow/scriptflow-cli/releases');
+}
+
 yargs(hideBin(process.argv))
     .command('init', 'Initialize the flow manager', {}, initialize)
-    .command('create', 'Create a new flow', {}, createFlow)
+    .command('create', 'Create a new flow', {}, createFlowWithPrompt)
     .command('list', 'List all flows', {}, listFlows)
     .command('run <flowName>', 'Run a flow by name', {}, (argv) => runFlow(argv.flowName))
     .command('delete <flowName>', 'Delete a flow by name', {}, (argv) => deleteFlow(argv.flowName))
@@ -472,6 +522,7 @@ yargs(hideBin(process.argv))
     .command('edit <flowName>', 'Open a flow for editing', {}, (argv) => openFlowForEditing(argv.flowName))
     .command('default', 'Reset the flow manager config', {}, resetConfig)
     .command('config', 'View the flow manager config', {}, viewConfig)
+    .command('update', 'Update the flow manager', {}, update)
     .demandCommand()
     .help()
     .argv;

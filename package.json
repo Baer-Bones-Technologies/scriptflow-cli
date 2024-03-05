@@ -1,7 +1,7 @@
 {
   "name": "scriptflow-cli",
   "version": "0.0.3",
-  "description": "A workflow CLI created to streamline any taska that are done on a regular basis through the terminal",
+  "description": "A workflow CLI created to streamline any tasks that are done on a regular basis through the terminal",
   "main": "index.js",
   "bin": {
     "flow": "bin/index.js"
