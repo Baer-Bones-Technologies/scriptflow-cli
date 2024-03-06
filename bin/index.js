@@ -24,7 +24,7 @@ const checkForUpdates = async () => {
 
   if (latestVersion !== require("../package.json").version) {
     console.log(
-      'A new version of scriptflow-cli is available. Run "npm i -g scriptflow-cli" to update.'
+      'A new version of scriptflow-cli is available.\nRun "flow update" to update flows and cli to latest version\nor\n"npm i -g scriptflow-cli" to update only the CLI.'
     );
   }
 };
@@ -569,7 +569,7 @@ const update = async () => {
 
   //update scriptflow-cli
   const { stdout, stderr } = await executeCommand(
-    'npm i -g . | grep -q "Error" && exit 1 || exit 0'
+    'npm i -g scriptflow-cli | grep -q "Error" && exit 1 || exit 0'
   );
   console.log(stdout);
   if (stderr) {
