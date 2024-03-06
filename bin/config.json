@@ -3,6 +3,6 @@
   "flowCommandDir": "$USER_HOME/.flows/commands",
   "flowFileName": "flows.json",
   "defaultFlowPath": ".",
-  "terminalProfile": "powershell",
-  "initialized": true
+  "terminalProfile": "zsh",
+  "initialized": false
 }

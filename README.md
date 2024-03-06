@@ -1,20 +1,20 @@
-# Taskflow CLI: Command Line Workflow Automation Tool
+# Scriptflow CLI: Command Line Workflow Automation Tool
 
-Taskflow CLI is a sophisticated command-line interface (CLI) tool specifically designed for streamlining the management and execution of custom command flows. Compatible with various terminal profiles including Bash, Zsh, PowerShell, and CMD, Taskflow CLI simplifies creating, listing, running, deleting, and editing command sequences with ease.
+Scriptflow CLI is a sophisticated command-line interface (CLI) tool specifically designed for streamlining the management and execution of custom command flows. Compatible with various terminal profiles including Bash, Zsh, PowerShell, and CMD, Scriptflow CLI simplifies creating, listing, running, deleting, and editing command sequences with ease.
 
 ## Installation
-Install Taskflow CLI globally using npm for easy access across your system:
+Install Scriptflow CLI globally using npm for easy access across your system:
 
 ```bash
-npm install -g taskflow-cli
+npm install -g scriptflow-cli
 ```
-This installation process integrates Taskflow CLI seamlessly into your terminal, making the `flow` command globally accessible.
+This installation process integrates Scriptflow CLI seamlessly into your terminal, making the `flow` command globally accessible.
 
 ## Usage
-Taskflow CLI enhances your command line efficiency with the following commands:
+Scriptflow CLI enhances your command line efficiency with the following commands:
 
-### Initialize Taskflow CLI
-Start by initializing Taskflow CLI to set up your preferred terminal profile and flow directory:
+### Initialize Scriptflow CLI
+Start by initializing Scriptflow CLI to set up your preferred terminal profile and flow directory:
 
 ```bash
 flow init
@@ -61,11 +61,20 @@ Change `<flowName>` to the name of the flow you intend to edit.
 
 *Current version requires VS Code for the edit command.*
 
+### Set to Default
+Set scriptflow to default settings, with the option to delete flows:
+
+```bash
+flow default
+```
+After resetting you will need to re initialize Scriptflow with ```flow init```
+
+
 ## Configuration
-Customize your Taskflow CLI experience by tweaking the `config.json` file, allowing adjustments in terminal profiles and default settings.
+Customize your Scriptflow CLI experience by tweaking the `config.json` file, allowing adjustments in terminal profiles and default settings.
 
 ## Contributing
-Join the Taskflow CLI community! Contributions, bug reports, and feature suggestions are welcome. Visit our GitHub repository for more details.
+Join the Scriptflow CLI community! Contributions, bug reports, and feature suggestions are welcome. Visit our GitHub repository for more details.
 
 ## License
-Taskflow CLI is open-source, licensed under the MIT License. Refer to the LICENSE file for more information.
+Scriptflow CLI is open-source, licensed under the MIT License. Refer to the LICENSE file for more information.
