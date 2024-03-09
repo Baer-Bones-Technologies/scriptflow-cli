@@ -1,7 +1,7 @@
 {
   "announcements": [
     {
-      "version": "0.2.0",
+      "version": "1.0.01",
       "messages": [
         "Scriptflow now has color for better readability and a tutorial!\n\nFor first time users you can run `flow init` to get started with a tutorial.\n\nFor experienced users you can run `flow help` if you need a refresh of the commands.",
         "announcements are now a thing they will be updated with every new version of Scriptflow.\n\nYou can run `flow announcements` to see the announcements for the current version of Scriptflow. It's better than the changelog because it's more personal and you can see the announcements for the version you are currently using. And if you're curious about the previous announcements you can run `flow announcements --all` to see all the announcements for all the versions of Scriptflow after {version}.\n\n If you want to see the announcements for a specific version you can run `flow announcements --version <version>` to see the announcements for that version.",
