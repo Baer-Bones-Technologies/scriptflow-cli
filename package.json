@@ -1,21 +1,19 @@
 {
   "name": "scriptflow-cli",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "A workflow CLI created to streamline any tasks that are done on a regular basis through the terminal",
   "main": "index.js",
+  "type": "module",
   "bin": {
     "flow": "bin/index.js"
   },
   "dependencies": {
     "boxen": "^7.1.1",
-    "chalk": "^5.3.0",
-    "child_process": "^1.0.2",
-    "fs": "^0.0.1-security",
-    "inquirer": "^9.2.15",
-    "os": "^0.1.2",
-    "path": "^0.12.7",
-    "util": "^0.12.5",
-    "yargs": "^17.7.2"
+    "chalk": "^4.1.2",
+    "inquirer": "^8.2.6",
+    "lodash": "^4.17.21",
+    "yargs": "^17.7.2",
+    "yargs-parser": "^21.1.1"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -25,7 +23,7 @@
     "url": "git+https://github.com/Baer-Bones-Technologies/scriptflow-cli.git"
   },
   "author": "Baer Hous",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/Baer-Bones-Technologies/scriptflow-cli/issues"
   },
