@@ -10,11 +10,63 @@ const packageJson = require("../package.json");
 
 const { hideBin } = require("yargs/helpers");
 const fs = require("fs/promises");
-const { check } = require("yargs");
+const prettify = require("./prettify");
 
-const configFile = path.join(__dirname, "config.json");
+
+const configFile = path.join(__dirname, "dconfig.json");
 
 const executeCommand = util.promisify(childProcess.exec);
+
+const announcements = async ({versionChoice = undefined}) => {
+  const config = await loadConfig();
+
+  if (!config.initialized) {
+    console.log(
+      'Flow manager is not initialized. Please run "flow init" to initialize it.'
+    );
+    return;
+  }
+
+  for (const announcement in config.announcements){
+    if(announcement.version === versionChoice ?? packageJson.version){
+      for(const message in announcement.messages){
+        console.log(prettify.formatAnnouncement(message));
+      }
+    } 
+    break;
+  }
+}
+
+const announcementVersionList = async () => {
+  const config = await loadConfig();
+
+  if (!config.initialized) {
+    console.log(
+      'Flow manager is not initialized. Please run "flow init" to initialize it.'
+    );
+    return;
+  }
+
+  const versionList = config.announcements.map((announcement) => {
+    return announcement.version;
+  });
+
+  const versionAnswer = await inquirer.prompt({
+    type: "list",
+    name: "version",
+    message: "Select a version to view announcements for:",
+    choices: versionList,
+  });
+
+  for (const announcement in config.announcements){
+    if(announcement.version === versionAnswer.version){
+      for(const message in announcement.messages){
+        console.log(prettify.formatAnnouncement(message));
+      }
+    } 
+    break;
+  }
+}
 
 const checkForUpdates = async () => {
   const { stdout, stderr } = await executeCommand(
@@ -86,7 +138,7 @@ const createFlow = async (flowName, flowPath, commands) => {
       scriptFileExtension = ".bat";
       break;
     default:
-      console.log("Invalid terminal profile selected.");
+      console.log(prettify.formatError("Invalid terminal profile selected."));
       return;
   }
   const commandFolder = path.join(config.flowCommandDir, flowName);
@@ -105,13 +157,13 @@ const createFlow = async (flowName, flowPath, commands) => {
 
     await saveFlows(flows);
 
-    console.log(`Flow created successfully! File location: ${scriptFile}`);
+    console.log(prettify.formatSuccess("Flow created successfully!"));
   } catch (error) {
-    console.error("Error creating flow:", error.message);
+    console.error(prettify.formatError("Error creating flow:"), error.message);
   }
 };
 
-const createFlowWithPrompt = async () => {
+const createFlowWithPrompt = async ({tutorialRunning = false}) => {
   await checkForUpdates();
 
   const config = await loadConfig();
@@ -121,6 +173,10 @@ const createFlowWithPrompt = async () => {
       'Flow manager is not initialized. Please run "flow init" to initialize it.'
     );
     return;
+  }
+
+  if(tutorialRunning) {
+    console.log(prettify.formatAnnouncement(config.tutorial.steps[2].subSteps[0].output));
   }
 
   const questions = [
@@ -164,7 +220,7 @@ const createFlowWithPrompt = async () => {
     {
       type: "input",
       name: "commands",
-      message: "Enter the commands to run (comma separated):",
+      message: tutorialRunning ? "Here We do a little scripting, input whatever you want or try 'echo \"Hello World!\", " : "Enter the commands to run (comma separated):",
       validate: async (value) => {
         try {
           if (value === "") {
@@ -186,6 +242,10 @@ const createFlowWithPrompt = async () => {
   }
 
   createFlow(flowName, flowPath, commands);
+
+  if(tutorialRunning) {
+    console.log(prettify.formatAnnouncement(config.tutorial.steps[2].subSteps[0].finished));
+  }
 };
 
 const deleteFlow = async (flowName) => {
@@ -221,14 +281,28 @@ const deleteFlow = async (flowName) => {
 };
 
 const initialize = async () => {
+ const config = await loadConfig();
+    if (config.initialized) {
+      console.log(prettify.formatInfo("Flow manager is already initialized!"));
+    }
+
+    var tutorialAnswer = false;
+
+    if(!config.initialized) {
+      tutorialAnswer = inquirer.prompt({
+        type: "confirm",
+        name: "tutorial",
+        message: config.tutorial.steps[0].message,
+        default: true,
+      });
+
+      if(tutorialAnswer.tutorial) {
+        console.clear();
+        console.log(prettify.formatAnnouncement(config.tutorial.steps[1].message));
+      }
+    }
+  
   await checkForUpdates();
-
-  const config = await loadConfig();
-
-  if (config.initialized) {
-    console.log("Flow manager is already initialized.");
-    return;
-  }
 
   const terminalProfileAnswer = await inquirer.prompt({
     type: "list",
@@ -251,8 +325,14 @@ const initialize = async () => {
   config.initialized = true;
 
   await saveConfig(config);
-  console.log("Flow manager initialized successfully!");
-};
+  console.log(prettify.formatSuccess("Flow manager initialized successfully!"));
+
+  if(tutorialAnswer.tutorial) {
+    console.clear();
+    console.log(prettify.formatAnnouncement(config.tutorial.steps[2].message));
+    createFlowWithPrompt(tutorialRunning = true);
+  }
+}
 
 const listFlows = async () => {
   await checkForUpdates();
@@ -338,12 +418,26 @@ const openFlowForEditing = async (flowName) => {
 
   try {
     const { stdout, stderr } = await executeCommand(`code ${flow.script}`);
-    console.log(stdout);
+   
     if (stderr) {
       console.error(stderr);
     }
+     console.log(stdout);
   } catch (error) {
-    console.error("Error opening flow for editing:", error.message);
+    try{
+    switch (config.terminalProfile) {
+        case "bash":
+        case "zsh":
+          await executeCommand(`open ${flow.script}`);
+          break;
+        case "powershell":
+        case "cmd":
+          await executeCommand(`notepad ${flow.script}`);
+          break;
+      }
+    } catch (error) {
+      console.error("Error opening flow for editing:", error.message);
+    }
   } finally {
     process.chdir(currentDir);
     console.log("Finished.");
@@ -646,5 +740,9 @@ yargs(hideBin(process.argv))
   .command("config", "View the flow manager config", {}, viewConfig)
   .command("update", "Update the flow manager", {}, update)
   .command("clear", "Clear all flows", {}, clear)
+  .command("announcement", "View announcements", (yargs) => {
+    yargs.command("list", "List all announcements", {}, announcementVersionList);
+    yargs.command("version <version>", "View announcements for a specific version", {}, (version) => announcements(versionChoice = version)); 
+  }, announcements)
   .demandCommand()
   .help().argv;
