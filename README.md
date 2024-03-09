@@ -146,13 +146,3 @@ Join the Scriptflow CLI community! Contributions, bug reports, and feature sugge
 
 ## License
 Scriptflow CLI is open-source, licensed under the MIT License. Refer to the LICENSE file for more information.
-
-<style>
-    .sidenote {
-        background-color: #33241A;
-        padding: 10px;
-        margin: 10px 0;
-        border-left: 6px solid #7f7f7f;
-        color: #fff;
-    }
-    </style>
