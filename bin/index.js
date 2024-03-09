@@ -1,38 +1,157 @@
 #!/usr/bin/env node
+import boxen from 'boxen';
+import chalk from 'chalk';
+import childProcess from 'child_process';
+import fs from 'fs/promises';
+import inquirer from 'inquirer';
+import os from 'os';
+import packageJson from '../package.json' assert { type: "json" };
+import path from 'path';
+import util from 'util';
+import yargs from 'yargs/yargs';
 
-const childProcess = require("child_process");
-const inquirer = require("inquirer");
-const os = require("os");
-const path = require("path");
-const util = require("util");
-const yargs = require("yargs/yargs");
-const packageJson = require("../package.json");
+import {fileURLToPath} from 'url';
+import { hideBin }  from 'yargs/helpers';
 
-const { hideBin } = require("yargs/helpers");
-const fs = require("fs/promises");
-const { check } = require("yargs");
+// tool used for stylization of the console output
+const prettify = {
+/** 
+* @function formatError
+* @function formatSuccess
+* @function fotmatAnnouncement
+* @function formatLink
+* @function formatInfo
+  */
+  formatError(message) {
+    return chalk.red(message);
+  },
+  formatSuccess(message) {
+    return chalk.green(message);
+  },
+  formatAnnouncement(message) {
+    const boxenOptions = {
+      padding: 1,
+      margin: 1,
+      borderStyle: 'round',
+      borderColor: 'yellow',
+      backgroundColor: 'black'
+    };
+    return boxen(chalk.yellow(message), boxenOptions);
+  },
+  formatLink(message) {
+    return chalk.blue.underline(message);
+  },
+  formatInfo(message) {
+    return chalk.blue(message);
+  }
 
-const configFile = path.join(__dirname, "config.json");
+} 
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const configFile = path.join(__dirname, "config.json") 
 const executeCommand = util.promisify(childProcess.exec);
 
+
+/**
+ * Function that formats announcements for a specific version
+ * @param {String} versionChoice the chosen version to view announcements for 
+ * @returns 
+ */
+const announcements = async ({ versionChoice = packageJson.version }) => {
+  try{
+  const config = await loadConfig();
+
+  if(versionChoice === "LIST"){
+    return announcementVersionList();
+  }
+  
+  console.log(prettify.formatInfo("Loading announcements for version: " + versionChoice))
+  for (var i = 0; i < config.announcements.length; i++) {
+    if (config.announcements[i].version === versionChoice || versionChoice === "ALL") {
+      var announcementOutput = "Announcements for version: " + config.announcements[i].version + "\n";
+      for(const message in config.announcements[i].messages){
+        announcementOutput += "    - " + config.announcements[i].messages[message] + "\n";
+      }
+      console.log(prettify.formatAnnouncement(announcementOutput));
+    }
+  }
+} catch (error) {
+  console.error(prettify.formatError("Error loading announcements:"), error.message);
+}
+}
+
+/**
+ * Function that asks user which version of the announcements they would like to view
+ */
+const announcementVersionList = async () => {
+  const config = await loadConfig();
+
+  await checkInit();
+
+  const versionList = config.announcements.map((announcement) => {
+    return announcement.version;
+  });
+  versionList.push("ALL");
+
+  const versionAnswer = await inquirer.prompt({
+    type: "list",
+    name: "version",
+    message: "Select a version to view announcements for:",
+    choices: versionList,
+  }); 
+  await announcements({ versionChoice: versionAnswer.version });
+}
+
+const checkInit = async () => {
+  const config = await loadConfig();
+  if (!config.initialized) {
+    prettify.formatError(console.log(
+      'Flow manager is not initialized. Please run "flow init" to initialize it.'
+    ));
+    return false;
+  }
+  return true;
+}
+/**
+ * Function that checks for updates to the scriptflow-cli
+ **/
 const checkForUpdates = async () => {
   const { stdout, stderr } = await executeCommand(
     "npm view scriptflow-cli version"
   );
   const latestVersion = stdout.trim();
 
-  if (latestVersion !== require("../package.json").version) {
+  if (compareVersions({latestVersion:latestVersion}) === true) {
     console.log(
       'A new version of scriptflow-cli is available.\nRun "flow update" to update flows and cli to latest version\nor\n"npm i -g scriptflow-cli" to update only the CLI.'
     );
   }
 };
 
-const clear = async () => {
-  //get current config
-  const config = await loadConfig();
+/**
+ * Function that checks the script for the current version
+ * @param {String} scriptFile Path to the script file
+ * @returns {Boolean} True if the script needs to be updated, otherwise false
+ */
+const checkScriptForVersion = async (scriptFile) => {
+  const currentVersion = packageJson.version;
+  const scriptContent = await fs.readFile(scriptFile, "utf-8");
+  if (!scriptContent.includes("scriptflow-cli " + currentVersion)) {
+    const prompt = await inquirer.prompt({
+      type: "confirm",
+      name: "update",
+      message:
+        prettify.formatAnnouncement("This script was generated by an older version of scriptflow-cli, and possibly wont display command output. Would you like to update your flow?"),
+      default: true,
+    });
+    return prompt.update;
+  }
+};
 
+/**
+ * Function that clears all flows
+ */
+const clear = async () => {
   //remove all flows
   const flows = await loadFlows();
   for (const flow of flows) {
@@ -41,6 +160,33 @@ const clear = async () => {
   }
 };
 
+/**
+ * Function that breaks down and compares the latest version with the current version between major, mid, and minor versions
+ * @param {String}latestVersion latest Version available 
+ * @returns 
+ */
+const compareVersions = ({latestVersion = packageJson.version}) => {
+  var needsUpdate = false;
+  if (latestVersion !== packageJson.version) {
+    const tempLatestVersion = latestVersion.split(".");
+    const tempCurrentVersion = packageJson.version.split(".");
+    if (tempLatestVersion[0] > tempCurrentVersion[0]) {
+      needsUpdate = true;
+    } else if (tempLatestVersion[1] > tempCurrentVersion[1]) {
+      needsUpdate = true;
+    } else if (tempLatestVersion[2] > tempCurrentVersion[2]) {
+      needsUpdate = true;
+    }
+  }
+  return needsUpdate;
+}
+
+/**
+ * Function that creates a new flow.
+ * @param {String} flowName Name of the flow.
+ * @param {String} flowPath Target path of the flow. 
+ * @param {String} commands Commands to run.
+ */
 const createFlow = async (flowName, flowPath, commands) => {
   let scriptContent = "";
   let scriptFileExtension = "";
@@ -48,7 +194,7 @@ const createFlow = async (flowName, flowPath, commands) => {
 
   const version = packageJson.version;
   const bashDisclosure =
-    '<# This script is generated by scriptflow-cli '+ version + ' #>\n\n####';
+    '<# This script is generated by scriptflow-cli ' + version + ' #>\n\n####';
   const batDisclosure =
     'REM This script is generated by scriptflow-cli' + version + ' \n\n####';
   const ps1Disclosure =
@@ -86,7 +232,7 @@ const createFlow = async (flowName, flowPath, commands) => {
       scriptFileExtension = ".bat";
       break;
     default:
-      console.log("Invalid terminal profile selected.");
+      console.log(prettify.formatError("Invalid terminal profile selected."));
       return;
   }
   const commandFolder = path.join(config.flowCommandDir, flowName);
@@ -105,22 +251,26 @@ const createFlow = async (flowName, flowPath, commands) => {
 
     await saveFlows(flows);
 
-    console.log(`Flow created successfully! File location: ${scriptFile}`);
+    console.log(prettify.formatSuccess("Flow created successfully!"));
   } catch (error) {
-    console.error("Error creating flow:", error.message);
+    console.error(prettify.formatError("Error creating flow:"), error.message);
   }
 };
 
-const createFlowWithPrompt = async () => {
+
+/**
+ * Function that prompts the user to create a new flow
+ * @param {Boolean} tutorialRunning Checks if the tutorial is running, defaults to false
+ */
+const createFlowWithPrompt = async ({ tutorialRunning = false }) => {
   await checkForUpdates();
 
   const config = await loadConfig();
 
-  if (!config.initialized) {
-    console.log(
-      'Flow manager is not initialized. Please run "flow init" to initialize it.'
-    );
-    return;
+await checkInit();
+
+  if (tutorialRunning) {
+    console.log(prettify.formatAnnouncement(config.tutorial.steps[2].subSteps[0].output));
   }
 
   const questions = [
@@ -164,7 +314,7 @@ const createFlowWithPrompt = async () => {
     {
       type: "input",
       name: "commands",
-      message: "Enter the commands to run (comma separated):",
+      message: tutorialRunning ? "Here We do a little scripting, input whatever you want or try 'echo \"Hello World!\", " : "Enter the commands to run (comma separated):",
       validate: async (value) => {
         try {
           if (value === "") {
@@ -186,19 +336,22 @@ const createFlowWithPrompt = async () => {
   }
 
   createFlow(flowName, flowPath, commands);
+
+  if (tutorialRunning) {
+    console.log(prettify.formatAnnouncement(config.tutorial.steps[2].subSteps[0].finished));
+  }
 };
 
+/**
+ * Function that deletes a flow
+ * @param {String} flowName Name of the flow to be deleted
+ */
 const deleteFlow = async (flowName) => {
   await checkForUpdates();
 
   const config = await loadConfig();
 
-  if (!config.initialized) {
-    console.log(
-      'Flow manager is not initialized. Please run "flow init" to initialize it.'
-    );
-    return;
-  }
+await checkInit();
 
   const flows = await loadFlows();
   const flowIndex = flows.findIndex((f) => f.name === flowName);
@@ -220,15 +373,33 @@ const deleteFlow = async (flowName) => {
   }
 };
 
+/**
+ * Function that initializes the flow manager
+ */
 const initialize = async () => {
-  await checkForUpdates();
-
   const config = await loadConfig();
-
   if (config.initialized) {
-    console.log("Flow manager is already initialized.");
-    return;
+    console.log(prettify.formatInfo("Flow manager is already initialized!"));
   }
+
+  var tutorialAnswer = false;
+
+  console.log(prettify.formatAnnouncement(config.init_messages));
+  if (!config.initialized) {
+    tutorialAnswer = await inquirer.prompt({
+      type: "confirm",
+      name: "tutorial",
+      message: config.tutorial.steps[0].message,
+      default: true,
+    });
+
+    if (tutorialAnswer.tutorial) {
+      console.clear();
+      console.log(prettify.formatAnnouncement(config.tutorial.steps[1].message));
+    }
+  }
+
+  await checkForUpdates();
 
   const terminalProfileAnswer = await inquirer.prompt({
     type: "list",
@@ -251,20 +422,23 @@ const initialize = async () => {
   config.initialized = true;
 
   await saveConfig(config);
-  console.log("Flow manager initialized successfully!");
-};
+  console.log(prettify.formatSuccess("Flow manager initialized successfully!"));
 
+  if (tutorialAnswer.tutorial) {
+    console.clear();
+    console.log(prettify.formatAnnouncement(config.tutorial.steps[2].message));
+    createFlowWithPrompt({tutorialRunning:true});
+  }
+}
+
+
+/**
+ * Function that lists all flows available on the flow manager
+ */
 const listFlows = async () => {
-  await checkForUpdates();
-
   const config = await loadConfig();
 
-  if (!config.initialized) {
-    console.log(
-      'Flow manager is not initialized. Please run "flow init" to initialize it.'
-    );
-    return;
-  }
+await checkInit();
 
   const flows = await loadFlows();
   if (flows.length === 0) {
@@ -277,9 +451,11 @@ const listFlows = async () => {
   }
 };
 
-const loadConfig = async () => {
-  await checkForUpdates();
 
+/**
+ * Loads user configuration from the config.json file
+ */
+const loadConfig = async () => {
   try {
     const configData = await fs.readFile(configFile, "utf-8");
     return JSON.parse(configData);
@@ -288,9 +464,11 @@ const loadConfig = async () => {
   }
 };
 
+/**
+ * Loads all flows from the flows.json file
+ * @returns {Array} Array of flows
+ */
 const loadFlows = async () => {
-  await checkForUpdates();
-
   try {
     const config = await loadConfig();
     const flowsFile = path.join(config.flowDir, "flows.json");
@@ -312,16 +490,38 @@ const loadFlows = async () => {
   }
 };
 
-const openFlowForEditing = async (flowName) => {
-  await checkForUpdates();
+/**
+ * Function that opens a flow for editing through vs code and backups to default text openCommand if vs code cli is not installed.
+ * @param {String} flowName Flow wanting to retrieve/edit. 
+ */
+const openFlowForEditing = async (flowName, {openCommand = "", path = ""}) => {
   const config = await loadConfig();
 
-  if (!config.initialized) {
-    console.log(
-      'Flow manager is not initialized. Please run "flow init" to initialize it.'
-    );
+await checkInit();
+
+if(openCommand !== "" || path !== ""){
+  // either openCommand or path is empty
+  try{
+  const validate = ((openCommand === "" && path !== "") || (openCommand !== "" && path === ""))
+  if(!validate){
+    throw new Error("Please provide either the openCommand or the path to the openCommand executable, but not both.")
+  }
+
+  if(openCommand !== ""){
+    config.defaultTextEditorCommand = openCommand;
+    config.defaultTextEditorPath = null;
+  }
+  if(path !== ""){
+    config.defaultTextEditorCommand = null;
+    config.defaultTextEditorPath = path;
+  }
+
+  await saveConfig(config);
+ } catch (error) {
+    console.error(prettify.formatError("Error opening flow for editing:"), error.message);
     return;
   }
+}
 
   const flows = await loadFlows();
   const flow = flows.find((f) => f.name === flowName);
@@ -337,19 +537,36 @@ const openFlowForEditing = async (flowName) => {
   console.log("Opening flow for editing: " + flow.name);
 
   try {
-    const { stdout, stderr } = await executeCommand(`code ${flow.script}`);
-    console.log(stdout);
+    const { stdout, stderr } = await executeCommand(`${config.defaultTextEditor ?? config.defaultTextEditorPath} ${flow.script}`);
+
     if (stderr) {
       console.error(stderr);
     }
+    console.log(stdout);
   } catch (error) {
-    console.error("Error opening flow for editing:", error.message);
+    try {
+      switch (config.terminalProfile) {
+        case "bash":
+        case "zsh":
+          await executeCommand(`open ${flow.script}`);
+          break;
+        case "powershell":
+        case "cmd":
+          await executeCommand(`notepad ${flow.script}`);
+          break;
+      }
+    } catch (error) {
+      console.error("Error opening flow for editing:", error.message);
+    }
   } finally {
     process.chdir(currentDir);
-    console.log("Finished.");
+    console.log(prettify.formatSuccess("Finished."));
   }
 };
 
+/**
+ * Function that re-initializes the flow manager
+ */
 const reinitialize = async () => {
   await checkForUpdates();
 
@@ -442,6 +659,9 @@ const reinitialize = async () => {
   }
 };
 
+/**
+ * Function that resets the flow manager config
+ */
 const resetConfig = async () => {
   const config = await loadConfig();
   config.flowDir = path.join(os.homedir(), ".flow");
@@ -452,38 +672,47 @@ const resetConfig = async () => {
   await saveConfig(config);
 };
 
+/**
+ * Function that runs a flow
+ * @param {String} flowName Name of the flow to be run
+ */
 const runFlow = async (flowName) => {
   await checkForUpdates();
 
   const flows = await loadFlows();
   var flow = flows.find((f) => f.name === flowName);
 
+  if(!flow) {
+    console.log(prettify.formatError("Flow not found"));
+    return;
+  }
+
   await checkScriptForVersion(flow.script).then(
     async (result) => {
-        if (result) {
-            const scriptFile = flow.script;
-            try {
-              var scriptContent = await fs.readFile(scriptFile, "utf-8");
-              // Update from v0.0.3 to v0.0.4
-              //replace shebang with blank
-              scriptContent = scriptContent.replace("#.*\n\n", "");
-              if (
-                !scriptContent.includes(
-                  '| tee -a /dev/tty | grep -q "Error" && exit 1 || exit 0\n\n'
-                )
-              ) {
-                // replace '\n\n' with ','
-                scriptContent = scriptContent.replaceAll("\n\n", ",");
-                if (!scriptContent.endsWith(",")) {
-                  scriptContent += ",";
-                }
-                await createFlow(flow.name, flow.path, scriptContent);
-                console.log("Flow updated successfully!");
-              }
-            } catch (error) {
-              console.error("Error updating flow:", error.message);
+      if (result) {
+        const scriptFile = flow.script;
+        try {
+          var scriptContent = await fs.readFile(scriptFile, "utf-8");
+          // Update from v0.0.3 to v0.0.4
+          //replace shebang with blank
+          scriptContent = scriptContent.replace("#.*\n\n", "");
+          if (
+            !scriptContent.includes(
+              '| tee -a /dev/tty | grep -q "Error" && exit 1 || exit 0\n\n'
+            )
+          ) {
+            // replace '\n\n' with ','
+            scriptContent = scriptContent.replaceAll("\n\n", ",");
+            if (!scriptContent.endsWith(",")) {
+              scriptContent += ",";
             }
+            await createFlow(flow.name, flow.path, scriptContent);
+            console.log("Flow updated successfully!");
           }
+        } catch (error) {
+          console.error("Error updating flow:", error.message);
+        }
+      }
     }
   );
 
@@ -491,12 +720,7 @@ const runFlow = async (flowName) => {
 
   const config = await loadConfig();
 
-  if (!config.initialized) {
-    console.log(
-      'Flow manager is not initialized. Please run "flow init" to initialize it.'
-    );
-    return;
-  }
+await checkInit();
 
   if (!flow) {
     console.log("Flow not found");
@@ -541,6 +765,10 @@ const runFlow = async (flowName) => {
   }
 };
 
+/**
+ * Function that saves the user configuration to the config.json file
+ * @param {Object} config Configuration object to be saved
+ */
 const saveConfig = async (config) => {
   await checkForUpdates();
 
@@ -551,6 +779,10 @@ const saveConfig = async (config) => {
   }
 };
 
+/**
+ * Function that saves the flows to the flows.json file
+ * @param {Array} flows Array of flows to be saved
+ */
 const saveFlows = async (flows) => {
   const config = await loadConfig();
   const flowsFile = path.join(config.flowDir, "flows.json");
@@ -562,7 +794,10 @@ const saveFlows = async (flows) => {
   }
 };
 
-//update via npm
+
+/**
+ * Function that updates the flow manager
+ */
 const update = async () => {
   //get current config
   const config = await loadConfig();
@@ -608,43 +843,57 @@ const update = async () => {
   }
 };
 
+/**
+ * Developer function that views the flow manager config
+ */
 const viewConfig = async () => {
   const config = await loadConfig();
   console.log(config);
 };
 
-const checkScriptForVersion = async (scriptFile) => {
-  const currentVersion = packageJson.version;
-  const scriptContent = await fs.readFile(scriptFile, "utf-8");
-  if (!scriptContent.includes("scriptflow-cli " + currentVersion)) {
-    const prompt = await inquirer.prompt({
-      type: "confirm",
-      name: "update",
-      message:
-        "This script was generated by an older version of scriptflow-cli, and possibly wont display command output. Would you like to update your flow?",
-      default: true,
-    });
-    return prompt.update;
-  }
-};
-
+/**
+ * Command Manager for the scriptflow-cli
+ */
 yargs(hideBin(process.argv))
   .command("init", "Initialize the flow manager", {}, initialize)
   .command("create", "Create a new flow", {}, createFlowWithPrompt)
   .command("list", "List all flows", {}, listFlows)
-  .command("run <flowName>", "Run a flow by name", {}, (argv) =>
-    runFlow(argv.flowName)
+  .command("run <flowName>", "Run a flow by name", {}, (flow) =>
+    runFlow(flow.flowName)
   )
-  .command("delete <flowName>", "Delete a flow by name", {}, (argv) =>
-    deleteFlow(argv.flowName)
+  .command("delete <flowName>", "Delete a flow by name", {}, (flow) =>
+    deleteFlow(flow.flowName)
   )
   .command("reinit", "Reinitialize the flow manager", {}, reinitialize)
-  .command("edit <flowName>", "Open a flow for editing", {}, (argv) =>
-    openFlowForEditing(argv.flowName)
+  .command("edit <flowName>", "Open a flow for editing\n" + prettify.formatInfo("--openCommand, --o") + " Change default editor command\n" + prettify.formatInfo("--path, -p") +" Change default text editor path\n\n", (yargs) => {
+    yargs.positional("flowName", {
+      alias: "f",
+      type: "string",
+      describe: "The name of the flow to open for editing",
+    })
+    .positional("openCommand", {
+      alias: "o",
+      type: "string",
+      describe: "The name of the editor to use"
+    })
+    .positional("path", {
+      alias: "p",
+      type: "string",
+      describe: "The path of the editor executable to open for editing"
+    })
+  }, (flow) =>
+    openFlowForEditing(flow.flowName)
   )
   .command("default", "Reset the flow manager config", {}, resetConfig)
   .command("config", "View the flow manager config", {}, viewConfig)
   .command("update", "Update the flow manager", {}, update)
   .command("clear", "Clear all flows", {}, clear)
+  .command("news", "View announcements\n" + prettify.formatInfo("--versionChoice, -v") +" choose version\n\n", (yargs) => {
+    yargs.positional('versionChoice', {
+      type: 'string',
+      default: 'LIST',
+      describe: 'The version of the announcements you would like to view. Type "LIST" to view all versions available.'
+    })
+  }, ({versionChoice}) => announcements({versionChoice:versionChoice}))
   .demandCommand()
   .help().argv;

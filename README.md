@@ -1,8 +1,19 @@
 # Scriptflow CLI: Command Line Workflow Automation Tool
 
 ## Updated Versions Need to Know
-- 0.1.0
-    In previous versions I noticed a bug where flows would be ran with no output displayed to the terminal. This has been fixed in this version. However, if you are using a flow that was created in a previous version, you will need to run `flow update`, or manually update the flow by using `flow edit` and adding `| tee -a /dev/tty | grep -q "Error" && exit 1 || exit 0` command at the end of the flows lines if it hasn't been updated after running `flow update`. This will allow the output to be displayed in the terminal.
+<div class="sidenote">
+    <h3>1.0.0</h3>
+    <ul>
+    <li> We are now in our first major release! 🚀🚀
+    </li>
+    <li> This release includes a new feature that allows you to set your default text editor for the edit command, a few bug fixes, and a new announcements command that displays a list of all the updates in the current version without having to visit the changelog.
+    </li>
+    <li>The edit command now falls back to the default text editor set in the config file. If you have not set a default editor, you will need to specify the editor with the -openCommand (-o) or -path (-p) flag.
+    </li>
+    </ul>
+ 
+
+</div>
 
 Scriptflow CLI is a sophisticated command-line interface (CLI) tool specifically designed for streamlining the management and execution of custom command flows. Compatible with various terminal profiles including Bash, Zsh, PowerShell, and CMD, Scriptflow CLI simplifies creating, listing, running, deleting, and editing command sequences with ease.
 
@@ -23,6 +34,16 @@ Start by initializing Scriptflow CLI to set up your preferred terminal profile a
 ```bash
 flow init
 ```
+
+### Announcements
+Stay updated with the latest changes and features:
+
+```bash
+flow news
+```
+<div class="sidenote">
+This will list all the update >=1.0.0 announcements available to view by version. 
+</div>
 
 ### Create a New Flow
 Easily create a new command flow:
@@ -63,7 +84,30 @@ flow edit <flowName>
 ```
 Change `<flowName>` to the name of the flow you intend to edit.
 
-*Current version requires VS Code for the edit command.*
+#### Updates:
+<div class="sidenote">
+<p> As of 1.0.0, the edit command is now open to any text editor that can be called from the terminal.
+</p>
+<br/>
+<p>
+To change your default editor use the -openCommand (-o) flag with the flow init command.
+</p>
+<pre>
+// Open sublime text as the default editor
+<br>
+flow edit hello-world -o subl
+</pre>
+<br>
+<p> If your editor is not in your PATH, you can use the -path (-p) flag to specify the path to the editor.
+<br>
+<pre>
+// Open sublime text as the default editor
+<br>
+flow edit hello-world -p /Applications/Sublime\ Text.app/Contents/SharedSupport/bin/subl
+</pre>
+
+<p> After setting the default editor you can use the edit command without specifying the editor.</p>
+</div>
 
 ### Set to Default
 Set scriptflow to default settings, with the option to delete flows:
@@ -102,3 +146,13 @@ Join the Scriptflow CLI community! Contributions, bug reports, and feature sugge
 
 ## License
 Scriptflow CLI is open-source, licensed under the MIT License. Refer to the LICENSE file for more information.
+
+<style>
+    .sidenote {
+        background-color: #33241A;
+        padding: 10px;
+        margin: 10px 0;
+        border-left: 6px solid #7f7f7f;
+        color: #fff;
+    }
+    </style>

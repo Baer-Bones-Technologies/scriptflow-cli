@@ -1,8 +1,57 @@
 {
+  "announcements": [
+    {
+      "version": "0.2.0",
+      "messages": [
+        "Scriptflow now has color for better readability and a tutorial!\n\nFor first time users you can run `flow tutor` to get started with a tutorial.\n\nFor experienced users you can run `flow help` if you need a refresh of the commands.",
+        "announcements are now a thing they will be updated with every new version of Scriptflow.\n\nYou can run `flow announcements` to see the announcements for the current version of Scriptflow. It's better than the changelog because it's more personal and you can see the announcements for the version you are currently using. And if you're curious about the previous announcements you can run `flow announcements --all` to see all the announcements for all the versions of Scriptflow after {version}.\n\n If you want to see the announcements for a specific version you can run `flow announcements --version <version>` to see the announcements for that version.",
+        "If you were not aware prior, Scriptflow is also on Github. https://www.github.com/Baer-Bones-Technologies/scriptflow-cli \n\nYou can check out the source code, report issues, and even contribute to the project.",
+        "Users are not stuck to VSCode anymore for the flow editor. You can now run `flow edit` to open the flow editor in your default text editor.\n\n If you want to use a specific text editor you can run `flow edit --openCommand <editor command>` to open the flow editor in that text editor.\nFor example, if you want to open the flow editor in Sublime Text you would run `flow edit --openCommand subl`.\n Your default text editor must have a command line interface to work with Scriptflow.\n If you want to use a text editor that doesn't have a command line interface you can run `flow edit --path <path>` to open the flow editor in that text editor and open the flow at the specified path.\n For example, if you want to open the flow editor in Sublime Text and open the flow at the path `~/Documents/flows` you would run `flow edit --editor sublime --path ~/Documents/flows`\n when you change your default text editor it will be saved in the config file and will be used as the default text editor for the flow editor."
+      ]
+    },
+    {
+      "version": "What's next?",
+      "messages": [
+        "Working on a way to get user input to be used during flows. This will allow for more dynamic flows and will make Scriptflow even more powerful than it already is. Stay tuned for the next update!"
+      ]
+    }
+  ],
+  "defaultTextEditorCommand": "code",
+  "defaultTextEditorPath": null,
   "flowDir": "$USER_HOME/.flows",
   "flowCommandDir": "$USER_HOME/.flows/commands",
   "flowFileName": "flows.json",
   "defaultFlowPath": ".",
   "terminalProfile": "zsh",
-  "initialized": false
+  "initialized": false,
+  "announcementShown": false,
+  "init_messages": [
+    "Thank you for using Scriptflow CLI📜.\nIf this is your first time using Script flow you chose an awesome version. This one has a tutorial"
+  ],
+  "tutorial":
+    {
+      "steps": [
+        {
+          "title": "Welcome to Scriptflow CLI",
+          "message": "Scriptflow CLI is a tool that allows you to create and run scripts from the command line. It's a great tool for automating tasks and creating custom commands for your terminal. Would you like to go through a small tutorial on how to use scriptflow?",
+          "commands": [
+          ]
+        },
+        {
+          "title": "Initialization",
+          "description": "Before you can start using Scriptflow CLI, you need to initialize it. This will set the terminal type to create a file for and create a directory where your flows will be stored.\n\n Lets try it\n\n"
+        },
+        {
+          "title": "Creating a new flow",
+          "description": "Now that we are initialized lets create a flow. A flow is a collection of commands that you can run from the command line. To create a new flow, use the `flow create` command followed by the name of the flow. For example, to create a flow called `my-flow`, you would run `flow create my-flow`. Let's try it out!",
+          "subSteps": [
+            {
+              "output": "There are only 3 steps to creating a flow. First you have to name the flow, then choose where the flow should be ran, and lastly you have to add commands to the flow separated by a comma (,). Let's start with naming the flow",
+              "finished": "You've created your first flow! You can now run the flow by using the `flow run` command followed by the name of the flow. For example, to run the `my-flow` flow, you would run `flow run my-flow`. This command will run no matter what directory it is called from and will run as normal as if the folder it targets is open!\n\n For more help on any other commands you can run `flow help` to see all the commands available to you."
+            }
+          ]
+        }
+      ]
+
+}
 }
