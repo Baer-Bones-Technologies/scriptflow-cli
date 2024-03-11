@@ -2,7 +2,7 @@
 
 ## Updated Versions Need to Know
 <div class="sidenote">
-    <h3>Patch 1.0.0</h3>
+    <h3>Release v1.0.0</h3>
     <ul>
     <li> We are now in our first major release! 🚀🚀
     </li>
