@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+
+
 import boxen from 'boxen';
 import chalk from 'chalk';
 import childProcess from 'child_process';
@@ -493,7 +495,7 @@ const loadFlows = async () => {
  * Function that opens a flow for editing through vs code and backups to default text openCommand if vs code cli is not installed.
  * @param {String} flowName Flow wanting to retrieve/edit. 
  */
-const openFlowForEditing = async (flowName, {openCommand = undefined, path = undefined}) => {
+const openFlowForEditing = async (flowName, openCommand = undefined, path = undefined) => {
   const config = await loadConfig();
 
 await checkInit();
@@ -506,11 +508,11 @@ if(openCommand||path){
     throw new Error("Please provide either the openCommand or the path to the openCommand executable, but not both.")
   }
 
-  if(openCommand !== ""){
+  if(openCommand !== undefined){
     config.defaultTextEditorCommand = openCommand;
     config.defaultTextEditorPath = null;
   }
-  if(path !== ""){
+  if(path !== undefined){
     config.defaultTextEditorCommand = null;
     config.defaultTextEditorPath = path;
   }
@@ -814,9 +816,11 @@ const update = async () => {
   const flows = await loadFlows();
   for (const flow of flows) {
     const scriptFile = flow.script;
-    const scriptContent = await fs.readFile(scriptFile, "utf-8");
+    var scriptContent = await fs.readFile(scriptFile, "utf-8");
     // Update from v0.0.3 to v1.0.0
     //replace shebang with blank
+    scriptContent = scriptContent.replace("#.*\n\n", "");
+    //replace shebang and disclosure with blank
     scriptContent = scriptContent.replace("#.*\n\n.*\n\n####", "");
     if (
       !scriptContent.includes(
