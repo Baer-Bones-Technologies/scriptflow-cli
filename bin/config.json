@@ -39,11 +39,11 @@
         },
         {
           "title": "Initialization",
-          "description": "Before you can start using Scriptflow CLI, you need to initialize it. This will set the terminal type to create a file for and create a directory where your flows will be stored.\n\n Lets try it\n\n"
+          "message": "Before you can start using Scriptflow CLI, you need to initialize it. This will set the terminal type to create a file for and create a directory where your flows will be stored.\n\n Lets try it\n\n"
         },
         {
           "title": "Creating a new flow",
-          "description": "Now that we are initialized lets create a flow. A flow is a collection of commands that you can run from the command line. To create a new flow, use the `flow create` command followed by the name of the flow. For example, to create a flow called `my-flow`, you would run `flow create my-flow`. Let's try it out!",
+          "message": "Now that we are initialized lets create a flow. A flow is a collection of commands that you can run from the command line. To create a new flow, use the `flow create` command followed by the name of the flow. For example, to create a flow called `my-flow`, you would run `flow create my-flow`. Let's try it out!",
           "subSteps": [
             {
               "output": "There are only 3 steps to creating a flow. First you have to name the flow, then choose where the flow should be ran, and lastly you have to add commands to the flow separated by a comma (,). Let's start with naming the flow",
