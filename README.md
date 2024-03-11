@@ -2,7 +2,7 @@
 
 ## Updated Versions Need to Know
 <div class="sidenote">
-    <h3>1.0.0</h3>
+    <h3>Release v1.0.0</h3>
     <ul>
     <li> We are now in our first major release! 🚀🚀
     </li>
@@ -11,8 +11,15 @@
     <li>The edit command now falls back to the default text editor set in the config file. If you have not set a default editor, you will need to specify the editor with the -openCommand (-o) or -path (-p) flag.
     </li>
     </ul>
- 
-
+    <div>
+        <h4>Patch 1.0.2:</h4>
+            <ul>
+                <li>Fixed a bug that caused the edit command to not work properly. the openCommand  parameter was blocking opening</li>
+                <li>Fixed a bug that caused the tutorial not to fully load.</li>
+                <li> fixed a 'create' command bug that caused created flows not to run. if you are currently experiencing this issue, please run <code> flow update </code>
+                </li>
+        </ul>
+    </div>
 </div>
 
 Scriptflow CLI is a sophisticated command-line interface (CLI) tool specifically designed for streamlining the management and execution of custom command flows. Compatible with various terminal profiles including Bash, Zsh, PowerShell, and CMD, Scriptflow CLI simplifies creating, listing, running, deleting, and editing command sequences with ease.

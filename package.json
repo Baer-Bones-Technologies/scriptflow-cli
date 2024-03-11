@@ -1,6 +1,6 @@
 {
   "name": "scriptflow-cli",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A workflow CLI created to streamline any tasks that are done on a regular basis through the terminal",
   "main": "index.js",
   "type": "module",
@@ -13,7 +13,7 @@
     "inquirer": "^8.2.6",
     "lodash": "^4.17.21",
     "yargs": "^17.7.2"
-    },
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
